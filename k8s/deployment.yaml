@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: node-app
-          image: mukeshkr1234/node-app-v1
+          image: mukeshkr1234/node-app
           ports:
             - containerPort: 8080
           envFrom:
