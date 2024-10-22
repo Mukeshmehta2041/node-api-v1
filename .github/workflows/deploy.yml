@@ -19,7 +19,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${DOCKER_USERNAME}/node-app:${GITHUB_SHA::8} .
+          docker build -t "${{ secrets.DOCKER_USERNAME }}/node-app:${GITHUB_SHA::8}" .
 
       - name: Push Docker image to Docker Hub
         run: |
