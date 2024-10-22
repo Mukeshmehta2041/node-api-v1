@@ -25,50 +25,37 @@ jobs:
         run: |
           docker push "${{ secrets.DOCKER_USERNAME }}/node-app:${GITHUB_SHA::8}"
 
-            - name: SSH to Hostinger VPS
+      - name: SSH to Hostinger VPS and Deploy with Kubernetes
         env:
           HOSTINGER_SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
         run: |
           echo "${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}" > private_key
           chmod 600 private_key
           ssh -i private_key -o StrictHostKeyChecking=no ${HOSTINGER_USERNAME}@${HOSTINGER_IP} << 'EOF'
-            # Pull the latest Docker image
-            docker pull ${DOCKER_USERNAME}/node-app:${GITHUB_SHA::8}
+            # Create Kubernetes secrets
+            kubectl create secret generic my-app-secrets \
+              --from-literal=MONGODB_URI='${{ secrets.MONGODB_URI }}' \
+              --from-literal=GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
+              --from-literal=GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
+              --from-literal=CLIENT_URL='${{ secrets.CLIENT_URL }}' \
+              --from-literal=SESSION_SECRET='${{ secrets.SESSION_SECRET }}' \
+              --from-literal=UPSTASH_REDIS_REST_URL='${{ secrets.UPSTASH_REDIS_REST_URL }}' \
+              --from-literal=UPSTASH_REDIS_REST_TOKEN='${{ secrets.UPSTASH_REDIS_REST_TOKEN }}' \
+              --from-literal=GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' \
+              --from-literal=RESEND_API_KEY='${{ secrets.RESEND_API_KEY }}' \
+              --from-literal=STRIPE_SECRET_KEY='${{ secrets.STRIPE_SECRET_KEY }}' \
+              --from-literal=STRIPE_WEBHOOK_SECRET='${{ secrets.STRIPE_WEBHOOK_SECRET }}' \
+              --dry-run=client -o yaml | kubectl apply -f -
 
-            # Stop and remove existing container
-            docker stop node-app || true
-            docker rm node-app || true
-
-            # Run the new container
-            docker run -d --name node-app -p 80:3000 \
-              -e MONGODB_URI=${{ secrets.MONGODB_URI }} \
-              -e GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
-              -e GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
-              -e CLIENT_URL=${{ secrets.CLIENT_URL }} \
-              -e SESSION_SECRET=${{ secrets.SESSION_SECRET }} \
-              -e UPSTASH_REDIS_REST_URL=${{ secrets.UPSTASH_REDIS_REST_URL }} \
-              -e UPSTASH_REDIS_REST_TOKEN=${{ secrets.UPSTASH_REDIS_REST_TOKEN }} \
-              -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-              -e RESEND_API_KEY=${{ secrets.RESEND_API_KEY }} \
-              -e STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
-              -e STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
-              ${DOCKER_USERNAME}/node-app:${GITHUB_SHA::8}
-          EOF
-
-
-      - name: Configure Kubernetes
-        run: |
-          sshpass -p "${{ secrets.HOSTINGER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${HOSTINGER_USERNAME}@${HOSTINGER_IP} << 'EOF'
             # Set up Kubernetes configurations if Kubernetes is running on your VPS
             kubectl config set-context --current --namespace=default
+            
+            # Apply Kubernetes configurations
             kubectl apply -f k8s/deployment.yaml
             kubectl apply -f k8s/service.yaml
             kubectl apply -f k8s/ingress.yaml
-          EOF
-
-      - name: Check deployment status
-        run: |
-          sshpass -p "${{ secrets.HOSTINGER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${HOSTINGER_USERNAME}@${HOSTINGER_IP} << 'EOF'
+            
+            # Check deployment status
             kubectl rollout status deployment/node-app
             kubectl get pods
             kubectl get services
