@@ -34,6 +34,10 @@ jobs:
           echo "${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}" > private_key
           chmod 600 private_key
           ssh -i private_key -o StrictHostKeyChecking=no ${HOSTINGER_USERNAME}@${HOSTINGER_IP} << 'EOF'
+            # Create a directory for the application
+            mkdir -p ~/node-app
+            cd ~/node-app
+            
             # Create Kubernetes secrets
             kubectl create secret generic my-app-secrets \
               --from-literal=MONGODB_URI='${{ secrets.MONGODB_URI }}' \
@@ -49,7 +53,7 @@ jobs:
               --from-literal=STRIPE_WEBHOOK_SECRET='${{ secrets.STRIPE_WEBHOOK_SECRET }}' \
               --dry-run=client -o yaml | kubectl apply -f -
 
-            # Set up Kubernetes configurations if Kubernetes is running on your VPS
+            # Set up Kubernetes configurations
             kubectl config set-context --current --namespace=default
             
             # Apply Kubernetes configurations
