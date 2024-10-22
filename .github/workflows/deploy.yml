@@ -19,11 +19,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t "${{ secrets.DOCKER_USERNAME }}/node-app:${GITHUB_SHA::8}" .
+          docker build -t "${{ secrets.DOCKER_USERNAME }}/node-app" .
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push "${{ secrets.DOCKER_USERNAME }}/node-app:${GITHUB_SHA::8}"
+          docker push "${{ secrets.DOCKER_USERNAME }}/node-app"
 
       - name: SSH to Hostinger VPS and Deploy with Kubernetes
         env:
