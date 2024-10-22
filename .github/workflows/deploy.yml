@@ -25,13 +25,13 @@ jobs:
         run: |
           docker push "${{ secrets.DOCKER_USERNAME }}/node-app:${GITHUB_SHA::8}"
 
-      - name: SSH to Hostinger VPS
+            - name: SSH to Hostinger VPS
         env:
-          HOSTINGER_USERNAME: ${{ secrets.HOSTINGER_USERNAME }}
-          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
-          HOSTINGER_PASSWORD: ${{ secrets.HOSTINGER_PASSWORD }}
+          HOSTINGER_SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
         run: |
-          sshpass -p "${{ secrets.HOSTINGER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${HOSTINGER_USERNAME}@${HOSTINGER_IP} << 'EOF'
+          echo "${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+          ssh -i private_key -o StrictHostKeyChecking=no ${HOSTINGER_USERNAME}@${HOSTINGER_IP} << 'EOF'
             # Pull the latest Docker image
             docker pull ${DOCKER_USERNAME}/node-app:${GITHUB_SHA::8}
 
@@ -54,6 +54,7 @@ jobs:
               -e STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
               ${DOCKER_USERNAME}/node-app:${GITHUB_SHA::8}
           EOF
+
 
       - name: Configure Kubernetes
         run: |
