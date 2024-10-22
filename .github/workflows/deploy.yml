@@ -23,7 +23,7 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push ${DOCKER_USERNAME}/node-app:${GITHUB_SHA::8}
+          docker push "${{ secrets.DOCKER_USERNAME }}/node-app:${GITHUB_SHA::8}"
 
       - name: SSH to Hostinger VPS
         env:
