@@ -28,6 +28,8 @@ jobs:
       - name: SSH to Hostinger VPS and Deploy with Kubernetes
         env:
           HOSTINGER_SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
+          HOSTINGER_USERNAME: ${{ secrets.HOSTINGER_USERNAME }}
+          HOSTINGER_IP: ${{ secrets.HOSTINGER_IP }}
         run: |
           echo "${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}" > private_key
           chmod 600 private_key
